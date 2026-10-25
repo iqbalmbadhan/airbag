@@ -7,10 +7,12 @@ set -euo pipefail
 
 REPO_URL="https://github.com/iqbalmbadhan/airbag.git"
 CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo "")"
+SELF="${BASH_SOURCE[0]:-}"
+SRC_DIR=""
+if [ -n "$SELF" ] && [ -f "$SELF" ]; then SRC_DIR="$(cd "$(dirname "$SELF")" && pwd)"; fi
 
-# Running via curl | bash? Fetch the repo to a temp folder first.
-if [ -z "$SRC_DIR" ] || [ ! -d "$SRC_DIR/claude" ]; then
+# Not run from a clone (e.g. piped from curl)? Fetch the repo to a temp folder first.
+if [ -z "$SRC_DIR" ] || [ ! -f "$SRC_DIR/claude/skills/app-audit/SKILL.md" ]; then
   command -v git >/dev/null || { echo "git is required"; exit 1; }
   TMP="$(mktemp -d)"
   trap 'rm -rf "$TMP"' EXIT
@@ -26,7 +28,7 @@ SETTINGS="$CLAUDE_DIR/settings.json"
 
 if [ "${1:-}" = "--uninstall" ]; then
   rm -f "$RULES"
-  rm -rf "$SKILL"
+  if [ -f "$SKILL/.airbag" ]; then rm -rf "$SKILL"; elif [ -d "$SKILL" ]; then echo "• left $SKILL alone (not installed by airbag)"; fi
   if [ -f "$GUIDE" ] && cmp -s "$GUIDE" "$SRC/claude-security-guidance.md"; then rm -f "$GUIDE"; fi
   echo "airbag removed. Permission rules in $SETTINGS were left in place — remove them by hand if you want."
   exit 0

@@ -14,6 +14,7 @@ if (-not $SrcDir -or -not (Test-Path (Join-Path $SrcDir "claude"))) {
     if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw "git is required" }
     $Tmp = Join-Path ([IO.Path]::GetTempPath()) ("airbag-" + [guid]::NewGuid())
     git clone --depth 1 --quiet $RepoUrl $Tmp
+    if ($LASTEXITCODE -ne 0) { throw "git clone failed" }
     $SrcDir = $Tmp
 }
 $Src = Join-Path $SrcDir "claude"
@@ -29,7 +30,8 @@ function Same($a, $b) { (Test-Path $a) -and ((Get-FileHash $a).Hash -eq (Get-Fil
 try {
     if ($Uninstall) {
         Remove-Item $Rules -ErrorAction SilentlyContinue
-        Remove-Item $Skill -Recurse -Force -ErrorAction SilentlyContinue
+        if (Test-Path (Join-Path $Skill ".airbag")) { Remove-Item $Skill -Recurse -Force }
+        elseif (Test-Path $Skill) { Write-Host "[i] left $Skill alone (not installed by airbag)" }
         if (Same $Guide $SrcGuide) { Remove-Item $Guide }
         Write-Host "airbag removed. Permission rules in $Settings were left in place."
         return
@@ -56,13 +58,13 @@ try {
         Write-Host "[ok] guidance   -> $Guide"
     }
 
-    $add = (Get-Content (Join-Path $Src "settings.json") -Raw | ConvertFrom-Json).permissions
+    $add = (Get-Content (Join-Path $Src "settings.json") -Raw -Encoding UTF8 | ConvertFrom-Json).permissions
     if (-not (Test-Path $Settings)) {
         Copy-Item (Join-Path $Src "settings.json") $Settings
         Write-Host "[ok] settings   -> $Settings"
     } else {
-        $cur = Get-Content $Settings -Raw | ConvertFrom-Json
-        if (-not $cur.permissions) { $cur | Add-Member -NotePropertyName permissions -NotePropertyValue ([pscustomobject]@{}) }
+        $cur = Get-Content $Settings -Raw -Encoding UTF8 | ConvertFrom-Json
+        if (-not ($cur.PSObject.Properties.Name -contains 'permissions')) { $cur | Add-Member -NotePropertyName permissions -NotePropertyValue ([pscustomobject]@{}) -Force }
         $changed = $false
         foreach ($key in $add.PSObject.Properties.Name) {
             $list = @(@($cur.permissions.$key) | Where-Object { $_ })

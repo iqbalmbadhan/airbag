@@ -18,9 +18,9 @@ Audit this project. Scope / focus from the user (empty = whole project, all area
 
 ## Step 2 — Run available automated checks (skip any tool that isn't installed; say which were skipped)
 - Dependencies: `composer audit`, `npm audit --omit=dev`, `pip-audit`
-- Secrets: `gitleaks detect --no-banner` (also check git history if available)
+- Secrets: `gitleaks detect --no-banner --redact` (always `--redact`) (also check git history if available)
 - Static analysis / lint: PHPStan/Larastan, ESLint, `tsc --noEmit`, ruff/mypy — whatever the project already uses
-- Tests: run the existing test suite and report pass/fail counts
+- Tests: run the existing test suite only if it uses a separate test database/environment (check phpunit.xml, .env.testing, test config). If it could touch a real database, ask first. Report pass/fail counts
 Do not install new global tools without asking.
 
 ## Step 3 — Manual review
