@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/.env)",
+      "Read(./**/.env.*)",
+      "Read(~/.ssh/**)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(php artisan migrate:fresh*)",
+      "Bash(php artisan db:wipe*)"
+    ]
+  }
+}
